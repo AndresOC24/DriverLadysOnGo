@@ -1,0 +1,377 @@
+---
+// ConductorasDashboard.astro
+---
+
+<div class="container">
+	<div class="header-section">
+		<div class="card">
+			<div class="text-center">
+				<h1 class="app-title">🚗 LadysOnGo</h1>
+				<p class="app-subtitle">Panel de Conductoras</p>
+				<div class="status-indicator">
+					<span id="status-dot" class="status-dot offline"></span>
+					<span id="status-text">Desconectada</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Formulario de Registro de Conductora -->
+	<div id="driver-setup" class="setup-section">
+		<div class="card">
+			<h2 class="section-title">👤 Información de Conductora</h2>
+			<form id="driver-form" class="driver-form">
+				<div class="form-group">
+					<label for="driver-name">Nombre completo:</label>
+					<input type="text" id="driver-name" placeholder="Ej: Ana García López" required>
+				</div>
+				
+				<div class="form-group">
+					<label for="driver-phone">Teléfono:</label>
+					<input type="tel" id="driver-phone" placeholder="Ej: +591 7xxxxxxx" required>
+				</div>
+				
+				<div class="form-group">
+					<label for="driver-vehicle">Información del vehículo:</label>
+					<input type="text" id="driver-vehicle" placeholder="Ej: Toyota Corolla Blanco - ABC123" required>
+				</div>
+				
+				<button type="submit" class="btn-primary w-full">
+					🚀 Empezar a Recibir Viajes
+				</button>
+			</form>
+		</div>
+	</div>
+	
+	<!-- Dashboard de Conductora Activa -->
+	<div id="active-driver" class="active-section" style="display: none;">
+		<div class="card">
+			<h2 class="section-title">🟢 Conductora Activa</h2>
+			<div class="driver-info">
+				<div class="info-row">
+					<strong>👤 Nombre:</strong> <span id="active-driver-name"></span>
+				</div>
+				<div class="info-row">
+					<strong>📱 Teléfono:</strong> <span id="active-driver-phone"></span>
+				</div>
+				<div class="info-row">
+					<strong>🚗 Vehículo:</strong> <span id="active-driver-vehicle"></span>
+				</div>
+				<div class="info-row">
+					<strong>📍 Ubicación:</strong> <span id="driver-location"></span>
+				</div>
+			</div>
+			
+			<div class="action-buttons">
+				<button id="stop-listening" class="btn-secondary">
+					⏹️ Dejar de Recibir Viajes
+				</button>
+				<button id="refresh-rides" class="btn-primary">
+					🔄 Actualizar Viajes
+				</button>
+			</div>
+		</div>
+		
+		<!-- Estadísticas -->
+		<div class="card">
+			<h3 class="stats-title">📊 Estadísticas del Día</h3>
+			<div class="stats-grid">
+				<div class="stat-item">
+					<div class="stat-number" id="trips-completed">0</div>
+					<div class="stat-label">Viajes Completados</div>
+				</div>
+				<div class="stat-item">
+					<div class="stat-number" id="earnings-today">$0</div>
+					<div class="stat-label">Ganancias Hoy</div>
+				</div>
+				<div class="stat-item">
+					<div class="stat-number" id="hours-online">0h</div>
+					<div class="stat-label">Tiempo Online</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Lista de Viajes Disponibles -->
+		<div class="card">
+			<div class="rides-header">
+				<h3 class="section-title">🔍 Viajes Disponibles</h3>
+				<div class="search-indicator">
+					<div class="loading-spinner" id="search-spinner" style="display: none;"></div>
+					<span id="last-update">Actualizando...</span>
+				</div>
+			</div>
+			
+			<div id="rides-container" class="rides-list">
+				<div id="no-rides" class="no-rides">
+					<div class="empty-state">
+						<div class="empty-icon">🕐</div>
+						<p>No hay viajes disponibles</p>
+						<small>Los nuevos viajes aparecerán aquí automáticamente</small>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Vista de Viaje en Progreso -->
+	<div id="trip-in-progress" class="trip-section" style="display: none;">
+		<div class="card">
+			<div class="trip-header">
+				<h2 class="section-title">🚗 Viaje en Progreso</h2>
+				<div class="trip-status">En camino hacia la pasajera</div>
+			</div>
+			
+			<div id="trip-details" class="trip-details">
+				<!-- Se llenará dinámicamente -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.container {
+		padding: 20px;
+		max-width: 600px;
+		margin: 0 auto;
+	}
+	
+	.header-section {
+		margin-bottom: 30px;
+	}
+	
+	.app-title {
+		font-size: 28px;
+		margin: 0 0 8px 0;
+		background: linear-gradient(135deg, #667eea, #764ba2);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		font-weight: bold;
+	}
+	
+	.app-subtitle {
+		color: #666;
+		margin: 0 0 20px 0;
+		font-size: 16px;
+	}
+	
+	.status-indicator {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		font-weight: 500;
+	}
+	
+	.status-dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		display: inline-block;
+	}
+	
+	.status-dot.offline {
+		background: #dc3545;
+		animation: pulse 2s infinite;
+	}
+	
+	.status-dot.online {
+		background: #28a745;
+		animation: pulse 2s infinite;
+	}
+	
+	@keyframes pulse {
+		0% { opacity: 1; }
+		50% { opacity: 0.5; }
+		100% { opacity: 1; }
+	}
+	
+	.section-title {
+		font-size: 20px;
+		margin-bottom: 20px;
+		color: #333;
+	}
+	
+	.form-group {
+		margin-bottom: 20px;
+	}
+	
+	label {
+		display: block;
+		margin-bottom: 8px;
+		font-weight: 600;
+		color: #333;
+	}
+	
+	input {
+		width: 100%;
+		padding: 12px;
+		border: 2px solid #e1e5e9;
+		border-radius: 8px;
+		font-size: 16px;
+		transition: border-color 0.3s ease;
+	}
+	
+	input:focus {
+		outline: none;
+		border-color: #667eea;
+		box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+	}
+	
+	.w-full {
+		width: 100%;
+	}
+	
+	.text-center {
+		text-align: center;
+	}
+	
+	.driver-info {
+		background: #f8f9fa;
+		padding: 15px;
+		border-radius: 8px;
+		margin-bottom: 20px;
+	}
+	
+	.info-row {
+		margin-bottom: 8px;
+		color: #333;
+	}
+	
+	.action-buttons {
+		display: flex;
+		gap: 10px;
+	}
+	
+	.action-buttons button {
+		flex: 1;
+	}
+	
+	.stats-title {
+		font-size: 18px;
+		margin-bottom: 15px;
+		color: #333;
+	}
+	
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 15px;
+	}
+	
+	.stat-item {
+		text-align: center;
+		padding: 15px;
+		background: #f8f9fa;
+		border-radius: 8px;
+	}
+	
+	.stat-number {
+		font-size: 24px;
+		font-weight: bold;
+		color: #667eea;
+		margin-bottom: 5px;
+	}
+	
+	.stat-label {
+		font-size: 12px;
+		color: #666;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+	
+	.rides-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+	}
+	
+	.search-indicator {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12px;
+		color: #666;
+	}
+	
+	.rides-list {
+		min-height: 200px;
+	}
+	
+	.no-rides {
+		text-align: center;
+		color: #666;
+		padding: 40px 20px;
+	}
+	
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+	}
+	
+	.empty-icon {
+		font-size: 48px;
+		opacity: 0.5;
+	}
+	
+	.ride-card {
+		background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+		border: 2px solid #e1e5e9;
+		border-radius: 12px;
+		padding: 20px;
+		margin-bottom: 15px;
+		transition: all 0.3s ease;
+		cursor: pointer;
+	}
+	
+	.ride-card:hover {
+		border-color: #667eea;
+		transform: translateY(-2px);
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+	}
+	
+	.ride-info {
+		margin-bottom: 15px;
+	}
+	
+	.ride-passenger {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+		margin-bottom: 10px;
+	}
+	
+	.ride-details {
+		color: #666;
+		line-height: 1.5;
+	}
+	
+	.ride-actions {
+		display: flex;
+		gap: 10px;
+	}
+	
+	.trip-header {
+		text-align: center;
+		margin-bottom: 20px;
+	}
+	
+	.trip-status {
+		background: #e3f2fd;
+		color: #1976d2;
+		padding: 8px 16px;
+		border-radius: 20px;
+		font-size: 14px;
+		font-weight: 500;
+		display: inline-block;
+		margin-top: 10px;
+	}
+	
+	.trip-details {
+		background: #f8f9fa;
+		padding: 20px;
+		border-radius: 8px;
+	}
+</style>
